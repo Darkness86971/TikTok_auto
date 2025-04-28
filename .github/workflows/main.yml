@@ -1,0 +1,43 @@
+name: Generate TikTok Content
+
+on:
+  schedule:
+    # Run at 8:00 AM, 2:00 PM, and 8:00 PM UTC every day
+    - cron: '0 8,14,20 * * *'
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  generate-content:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate TikTok content
+        run: python pipeline.py -n 3
+
+      - name: Upload generated images
+        uses: actions/upload-artifact@v3
+        with:
+          name: tiktok-posts
+          path: output/post_pov_*.jpg
+          retention-days: 7
+
+      - name: Commit and push generated images
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          git add output/post_pov_*.jpg
+          git commit -m "Add generated TikTok posts" || echo "No changes to commit"
+          git push
